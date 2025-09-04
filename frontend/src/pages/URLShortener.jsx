@@ -1,4 +1,8 @@
 import { useState } from 'react';
+<<<<<<< HEAD
+=======
+import Logger from '../../../logging-middleware/src/index.js';
+>>>>>>> ae96dd7 (Push all project contents)
 
 const URLShortener = () => {
     const [originalUrl, setOriginalUrl] = useState('');
@@ -28,12 +32,42 @@ const URLShortener = () => {
             localStorage.setItem(`shoturl_${code}`, originalUrl);
             const shortUrl = `${window.location.origin}/${code}`;
             setShortenedUrl(shortUrl);
+<<<<<<< HEAD
         }
         catch (err) {
             setError('Failed to shorten URL. Please try again.');
             } 
         setLoading(false);
     }
+=======
+
+            Logger.Log(
+                "frontend", 
+                "info",    
+                "api",     
+                `Shortened URL: ${originalUrl} to ${shortUrl}` 
+            );
+        }
+        catch (err) {
+            setError('Failed to shorten URL. Please try again.');
+        }
+        setLoading(false);
+    }
+    const getAllStats = () => {
+        const stats = [];
+        for (let key in localStorage) {
+            if (key.startsWith('shoturl_')) {
+                const code = key.replace('shoturl_', '');
+                const url = localStorage.getItem(key);
+                stats.push({ code, url });
+            }
+        }
+        return stats;
+    };
+
+    const allStats = getAllStats();
+
+>>>>>>> ae96dd7 (Push all project contents)
     return (
         <div className="url-shortener-container">
             <h1>URL Shortener</h1>
@@ -56,6 +90,35 @@ const URLShortener = () => {
                 </div>
             )}
             {error && <p className="error">{error}</p>}
+<<<<<<< HEAD
+=======
+
+            <div style={{ marginTop: '2em' }}>
+                <h2>All Shortened URLs & Stats</h2>
+                {allStats.length === 0 ? (
+                    <p>No stats available.</p>
+                ) : (
+                    <table border="1" cellPadding="8" style={{ borderCollapse: 'collapse', marginTop: '1em' }}>
+                        <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th>Original URL</th>
+                                <th>Short URL</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {allStats.map(({ code, url }) => (
+                                <tr key={code}>
+                                    <td>{code}</td>
+                                    <td>{url}</td>
+                                    <td><a href={`/${code}`} target="_blank" rel="noopener noreferrer">{window.location.origin + '/' + code}</a></td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
+            </div>
+>>>>>>> ae96dd7 (Push all project contents)
         </div>
     );
 }

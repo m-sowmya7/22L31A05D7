@@ -3,6 +3,32 @@
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
+<<<<<<< HEAD
+=======
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.url-shortener-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.url-input,
+.shorten-button {
+  margin: 0.5em;
+}
+
+table {
+  margin-left: auto;
+  margin-right: auto;
+>>>>>>> ae96dd7 (Push all project contents)
 }
 
 .logo {
