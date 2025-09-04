@@ -1,79 +1,81 @@
-import express, { json } from "express";
-import cors from "cors";
-import { LOG } from "./loggingMiddleware.js";
+// import express from 'express';
+// import { connectToMongoDb } from './mongo.js';
+// import dotenv from 'dotenv';
+// import urlRoutes from './routes/url.js';
+
+// dotenv.config();
+
+// const app = express();
+// const PORT = 8001;
+
+// app.use(express.json());
+
+// let client;
+
+// // MongoDB connection
+// connectToMongoDb().then((mongoClient) => {
+//     client = mongoClient;
+//     // console.log('Connected to MongoDB Atlas');
+// }).catch((error) => {
+//     console.error('Failed to connect to MongoDB Atlas:', error);
+//     process.exit(1); 
+// });
+
+// // Middleware to make the MongoDB client available for all routes
+// app.use((req, res, next) => {
+//     req.client = client; 
+//     next();
+// });
+
+// // Use the routes defined in the routes folder
+// app.use(urlRoutes);
+
+// app.listen(PORT, () => {
+//     console.log(`Server running at http://localhost:${PORT}`);
+// });
+
+import express from 'express';
+import { connectToMongoDb } from './mongo.js';
+import dotenv from 'dotenv';
+import urlRoutes from './routes/url.js';
+import cors from 'cors'; // If your API will be accessed from a frontend hosted elsewhere
+import morgan from 'morgan'; // For logging HTTP requests in production
+
+dotenv.config();
 
 const app = express();
 
+
+// Use middleware
 app.use(cors());
-app.use(json());
+app.use(morgan('combined'));
+app.use(express.json());
 
-const urlStore = new Map();
+let client;
 
-app.post("/shorten", async (req, res) => {
-  const { longUrl, validity = 30, shortCode } = req.body;
-  try {
-    if (!longUrl || !longUrl.startsWith("http")) {
-      await LOG("backend", "error", "handler", "invalid URL has been provided");
-      return res.status(400).json({ error: "invalid url" });
-    }
-    let code = shortCode || Math.random().toString(36).substring(2, 7);
-    if (urlStore.has(code)) {
-      await LOG("backend", "warn", "service", "shortcode collision");
-      return res.status(400).json({
-        error: "shortcode exists.",
-      });
-    }
+// MongoDB connection
+connectToMongoDb().then((mongoClient) => {
+    client = mongoClient;
 
-    const expiry = Date.now() + validity * 60 * 1000;
-    urlStore.set(code, { longUrl, expiry, clicks: [] });
-    const shortUrl = `http://localhost:3000/${code}`;
-    await LOG("backend", "info", "service", `shortened Url: ${shortUrl}`);
-    res.json({ shortUrl, expiry });
-  } catch (error) {
-    await LOG(
-      "backend",
-      "fatal",
-      "service",
-      `Server crashed: ${error.message}`
-    );
-    res.status(500).json({
-      error: "something went wrong in the server",
-    });
-  }
+}).catch((error) => {
+    console.error('Failed to connect to MongoDB Atlas:', error);
+    process.exit(1); // Exit if connection fails
 });
 
-app.get("/:code", async (req, res) => {
-  const { code } = req.params;
-  if (!urlStore.has(code)) {
-    await LOG("backend", "error", "route", `Shortcode not found ${code}`);
-    return res.status(404).send("not found");
-  }
-  const record = urlStore.get(code);
-  if (Date.now() > record.expiry) {
-    await LOG("backend", "warn", "service", `Shortcode expired ${code}`);
-    return res.status(410).send("link expired");
-  }
-  record.clicks.push({ timestamp: new Date().toISOString() });
-  await LOG(
-    "backend",
-    "info",
-    "route",
-    `redirecting ${code} to ${record.longUrl}`
-  );
-  res.redirect(record.longUrl);
+// Middleware to make the MongoDB client available for all routes
+app.use((req, res, next) => {
+    req.client = client;
+    next();
 });
 
-app.get("/stats", async (req, res) => {
-  const stats = Array.from(urlStore.entries()).map(([code, data]) => ({
-    code,
-    longUrl: data.longUrl,
-    expiry: data.expiry,
-    clicks: data.clicks.length,
-  }));
-    await LOG("backend", "info", "service", "stats requested");
-    res.json(stats);
-});
+// Use the routes defined in the routes folder
+app.use(urlRoutes);
 
-app.listen(5000, () => {
-    console.log("backend is running on port 5000")
-})
+// app.listen(8001, () => {
+//     console.log('Server is running on http://localhost:8001');
+// });
+
+// This handler will be used in Vercel
+export default function handler(req, res) {
+    app(req, res);
+}
